@@ -1,0 +1,86 @@
+// Реализовать класс Futures
+
+function Futures(executor) {
+    this.state = 'pending';
+    this.value = undefined;
+    this.callbacks = [];
+    
+    const resolve = (value) => {
+        if (this.state !== 'pending') return;
+        this.state = 'fulfilled';
+        this.value = value;
+        this.executeCallbacks();
+    };
+    
+    const reject = (value) => {
+        if (this.state !== 'pending') return;
+        this.state = 'rejected';
+        this.value = value;
+        this.executeCallbacks();
+    };
+    
+    try {
+        executor(resolve, reject);
+    } catch (error) {
+        reject(error);
+    }
+}
+
+Futures.prototype.then = function(onFulfilled, onRejected) {
+    if (this.state === 'pending') {
+        this.callbacks.push({
+            fulfill: onFulfilled,
+            reject: onRejected
+        });
+    } else {
+        this.executeCallback(
+            this.state === 'fulfilled' ? onFulfilled : onRejected,
+            this.value
+        );
+    }
+    return this;
+};
+
+Futures.prototype.executeCallbacks = function() {
+    const callback = this.state === 'fulfilled' ? 
+        this.callbacks[0]?.fulfill : 
+        this.callbacks[0]?.reject;
+    
+    if (callback) {
+        this.executeCallback(callback, this.value);
+    }
+};
+
+Futures.prototype.executeCallback = function(callback, value) {
+    setTimeout(() => {
+        if (typeof callback === 'function') {
+            callback(value);
+        }
+    }, 0);
+};
+
+
+
+// Тест #1
+var foo = new Futures(function (resolve, reject) {
+    resolve(123);
+});
+
+foo.then(function (val) {
+    console.log("foo.resolved:", val === 123);
+}, function () {
+    console.log("foo.resolved: fail");
+});
+
+
+// Тест #2
+var bar = new Futures(function (resolve, reject) {
+    setTimeout(resolve.bind(null, "fail"), 300);
+    setTimeout(reject.bind(null, "ok"), 200);
+});
+
+bar.then(function () {
+    console.log("bar.rejected: fail");
+}, function (val) {
+    console.log("bar.rejected:", val === "ok");
+});
