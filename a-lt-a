@@ -1,0 +1,17 @@
+// Возможно ли реализовать такое?
+
+var a;
+
+a = (function() {
+    let counter = 0;
+    return {
+        valueOf: function() {
+            counter += 1;
+            return counter;
+        }
+    };
+})();
+
+// Проверка
+console.log(a == a); // true
+console.log(a < a); // true
